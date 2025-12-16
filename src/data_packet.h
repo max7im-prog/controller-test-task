@@ -17,6 +17,9 @@ public:
 
   [[nodiscard]] bool toData(std::vector<uint8_t> &out) const;
 
+  static uint16_t generateCRC16(const DataPacket &packet);
+
+  static bool checkCRC16(const DataPacket &packet, uint16_t crc16);
 
   DataPacket() = default;
   DataPacket(const DataPacket &other) = default;
@@ -25,8 +28,15 @@ public:
   DataPacket &operator=(DataPacket &&other) = default;
   ~DataPacket() = default;
 
+  enum MessageId {
+    MSG_PWM = 0x10,
+    MSG_PID = 0x20,
+    MSG_STATUS = 0x30,
+    RESP_PWM = 0x81,
+    RESP_PID = 0x82,
+    RESP_STATUS = 0x83
+  };
+
 private:
-  static uint16_t generateCRC16(const DataPacket &packet);
-  static bool checkCRC16(const DataPacket &packet, uint16_t crc16);
   static constexpr uint32_t PACKET_BASE_SIZE = 6;
 };

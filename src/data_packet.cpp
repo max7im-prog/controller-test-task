@@ -1,4 +1,4 @@
-#include "protocol.h"
+#include "data_packet.h"
 
 [[nodiscard]] bool DataPacket::fromData(const std::vector<uint8_t> &data) {
   if (data.size() < PACKET_BASE_SIZE) {
