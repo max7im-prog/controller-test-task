@@ -1,7 +1,10 @@
+#pragma once
+
 #include <cstdint>
 #include <mutex>
 #include <queue>
 #include <vector>
+
 class VirtualSerial {
 public:
   void sendAtoB(const std::vector<uint8_t> &data);
