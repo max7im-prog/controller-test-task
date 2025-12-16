@@ -7,18 +7,20 @@
 
 class DataPacket {
 public:
-  uint8_t _header;
-  uint8_t _version;
-  uint8_t _command_id;
-  uint8_t _payload_len;
-  std::vector<std::byte> _payload;
-  uint16_t _crc16;
-
-  DataPacket();
+  uint8_t _header{0xAA};
+  uint8_t _version{1};
+  uint8_t _command_id{0};
+  uint8_t _payload_len{0};
+  std::vector<std::byte> _payload{};
+  uint16_t _crc16{0};
 
   [[nodiscard]] bool fromData(const std::vector<uint8_t> &data);
+
   [[nodiscard]] bool toData(std::vector<uint8_t> &out) const;
 
+  bool isValid() const;
+
+  DataPacket() = default;
   DataPacket(const DataPacket &other) = default;
   DataPacket(DataPacket &&other) = default;
   DataPacket &operator=(const DataPacket &other) = default;
