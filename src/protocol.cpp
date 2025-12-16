@@ -19,7 +19,6 @@
   _header = header;
   _version = version;
   _command_id = command_id;
-  _payload_len = payload_len;
   _payload.clear();
   _payload.reserve(payload_len);
   for (size_t i = 0; i < payload_len; i++) {
@@ -53,4 +52,39 @@
   out.push_back(static_cast<uint8_t>((_crc16 >> 8) & 0xFF));
 
   return true;
+}
+
+uint16_t DataPacket::generateCRC16(const DataPacket &packet) {
+  uint16_t crc = 0xFFFF;
+
+  auto update_crc = [&](uint8_t byte) {
+    crc ^= byte;
+    for (int i = 0; i < 8; ++i) {
+      if (crc & 1) {
+        crc = (crc >> 1) ^ 0x8408; // reversed 0x1021
+      } else {
+        crc >>= 1;
+      }
+    }
+  };
+
+  // Header fields
+  update_crc(packet._header);
+  update_crc(packet._version);
+  update_crc(packet._command_id);
+
+  // Payload length
+  uint8_t payload_len = static_cast<uint8_t>(packet._payload.size());
+  update_crc(payload_len);
+
+  // Payload bytes
+  for (std::byte b : packet._payload) {
+    update_crc(static_cast<uint8_t>(b));
+  }
+
+  return ~crc;
+}
+
+bool DataPacket::checkCRC16(const DataPacket &packet, uint16_t crc16) {
+  return (crc16 == DataPacket::generateCRC16(packet));
 }
