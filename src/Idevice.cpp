@@ -28,3 +28,6 @@ void IDevice::join() {
     _thread.join();
   }
 }
+
+IDevice::IDevice(std::chrono::milliseconds updateInterval)
+    : _updateInterval(updateInterval) {}

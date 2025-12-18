@@ -4,8 +4,10 @@ project(controller-test-task VERSION 0.1.0 LANGUAGES C CXX)
 add_executable(
   controller-test-task 
   src/main.cpp
-  src/virtual_serial.h
   src/virtual_serial.cpp
+  src/Idevice.cpp
+  src/device_a.cpp
+  src/device_b.cpp
 )
 
 
