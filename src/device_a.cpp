@@ -4,6 +4,41 @@
 #include <iostream>
 #include <random>
 
+const std::map<
+    std::uint8_t,
+    std::function<bool(const DataPacket &, std::shared_ptr<VirtualSerial>)>>
+    DeviceA::responseDispatchTable = {
+
+        {DataPacket::RESP_STATUS,
+         [](const DataPacket &dataPacket,
+            std::shared_ptr<VirtualSerial> link) -> bool {
+           if (dataPacket._payload.size() != 2) {
+             std::cerr << "[E] Malformed status response" << std::endl;
+           } else {
+             uint8_t battery = static_cast<uint8_t>(dataPacket._payload[0]);
+             uint8_t temperature = static_cast<uint8_t>(dataPacket._payload[1]);
+             std::cout << "[A] Received status: battery=" << battery
+                       << " temperature=" << temperature << std::endl;
+           }
+           return true;
+         }},
+
+        {DataPacket::RESP_PWM,
+         [](const DataPacket &dataPacket,
+            std::shared_ptr<VirtualSerial> link) -> bool {
+           if (dataPacket._payload.size() != 2) {
+             std::cerr << "[E] Malformed PWM response" << std::endl;
+           } else {
+             uint16_t pwm =
+                 (static_cast<uint8_t>(dataPacket._payload[0]) & 0xFF) |
+                 (static_cast<uint8_t>(dataPacket._payload[1] << 8) & 0xFF00);
+             std::cout << "[A] Received status: pwm=" << pwm << std::endl;
+           }
+           return true;
+         }}
+
+};
+
 namespace {
 void formPWMDataPacket(DataPacket &dataPacket, uint16_t pwm) {
   dataPacket._command_id = DataPacket::MessageId::MSG_PWM;
