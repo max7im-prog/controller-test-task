@@ -1,6 +1,6 @@
 # Test task with multi-threading
 
-This repository contains a program written in compliance with **TASK.md**
+This repository contains a program that implements requirements described in **TASK.md**
 
 ## Building the program
 
