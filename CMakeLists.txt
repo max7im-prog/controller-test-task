@@ -6,7 +6,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
-project(controller-test-task VERSION 0.1.0 LANGUAGES C CXX)
+project(controller-test-task VERSION 0.1.0 LANGUAGES CXX)
 
 # External libraries
 include(FetchContent)
@@ -37,7 +37,7 @@ add_library(
 )
 target_link_libraries(
   run_lib
-  PRIVATE
+  PUBLIC
   spdlog
 )
 target_include_directories(
@@ -66,9 +66,19 @@ add_executable(
 )
 target_link_libraries(
   Tests
-  PUBLIC
+  PRIVATE
   GTest::gtest_main
   run_lib
 )
+target_include_directories(
+  Tests
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+set_target_properties(Tests PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)
 include(GoogleTest)
-gtest_discover_tests(Tests)
+gtest_discover_tests(Tests
+  WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
+)

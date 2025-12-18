@@ -22,3 +22,7 @@ Executable is located in **build/bin**
 ## Test executable
 
 Test executable is also located in **build/bin**
+
+## Stopping the execution
+
+Program stop the execution on SIGINT (CTRL + C)
