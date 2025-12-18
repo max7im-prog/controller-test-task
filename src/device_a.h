@@ -16,6 +16,6 @@ protected:
   std::mt19937 _rnd;
   static const std::map<
       std::uint8_t,
-      std::function<bool(const DataPacket &, std::shared_ptr<VirtualSerial>)>>
-      responseDispatchTable; // TODO: fill dispatch table
+      std::function<bool(const DataPacket &, DeviceA&)>>
+      responseDispatchTable; 
 };

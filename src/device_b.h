@@ -15,7 +15,13 @@ protected:
   std::shared_ptr<VirtualSerial> _link;
   std::mt19937 _rnd;
   static const std::map<
-      std::uint8_t,
-      std::function<bool(const DataPacket &, std::shared_ptr<VirtualSerial>)>>
-      responseDispatchTable; // TODO: fill dispatch table
+      std::uint8_t, std::function<bool(const DataPacket &, DeviceB &device)>>
+      responseDispatchTable;
+
+  struct {
+    uint16_t _pwm;
+    float ki;
+    float kp;
+    float kd;
+  } _deviceState;
 };

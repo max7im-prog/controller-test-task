@@ -6,12 +6,12 @@
 
 const std::map<
     std::uint8_t,
-    std::function<bool(const DataPacket &, std::shared_ptr<VirtualSerial>)>>
+    std::function<bool(const DataPacket &, DeviceA& device)>>
     DeviceA::responseDispatchTable = {
 
         {DataPacket::RESP_STATUS,
          [](const DataPacket &dataPacket,
-            std::shared_ptr<VirtualSerial> link) -> bool {
+            DeviceA& device) -> bool {
            if (dataPacket._payload.size() != 2) {
              std::cerr << "[E] Malformed status response" << std::endl;
            } else {
@@ -25,7 +25,7 @@ const std::map<
 
         {DataPacket::RESP_PWM,
          [](const DataPacket &dataPacket,
-            std::shared_ptr<VirtualSerial> link) -> bool {
+            DeviceA& device) -> bool {
            if (dataPacket._payload.size() != 2) {
              std::cerr << "[E] Malformed PWM response" << std::endl;
            } else {
@@ -115,7 +115,7 @@ void DeviceA::step() {
 
   {
     bool crc16Matches =
-        DataPacket::checkCRC16(receivedDataPacket, receivedDataPacket._crc16);
+        DataPacket::checkCRC16(receivedDataPacket, receivedDataPacket._crc16) ;
     if (!crc16Matches) {
       std::cerr << "CRC16 does not match on receive" << std::endl;
       return;
