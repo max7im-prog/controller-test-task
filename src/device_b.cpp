@@ -68,16 +68,26 @@ const std::map<std::uint8_t,
          }}};
 
 DeviceB::DeviceB(std::shared_ptr<VirtualSerial> link)
-    : IDevice(std::chrono::milliseconds(100)), _link(link),
+    : IDevice(std::chrono::milliseconds(0)), _link(link),
       _rnd(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 void DeviceB::step() {
-  std::vector<uint8_t> receivedData;
 
+
+  {
+    bool hasData = _link->waitAToB();
+    if (!hasData) {
+      std::cerr << "Shutdown was issued on link" << std::endl;
+      return;
+    }
+  }
+  
+
+  std::vector<uint8_t> receivedData;
   {
     bool received = _link->readB(receivedData);
     if (!received) {
-      std::cerr << "Shutdown issued on link" << std::endl;
+      std::cerr << "No data in link" << std::endl;
       return;
     }
   }

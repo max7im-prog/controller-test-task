@@ -1,5 +1,3 @@
-
-
 #include "device_a.h"
 #include "device_b.h"
 #include "virtual_serial.h"
@@ -14,7 +12,9 @@ std::atomic<bool> g_running{true};
 }
 
 int main(int argc, char **argv) {
+
   std::signal(SIGINT, [](int) -> void { g_running = false; });
+  std::signal(SIGTERM, [](int) -> void { g_running = false; });
 
   auto link = std::make_shared<VirtualSerial>();
 
@@ -28,9 +28,9 @@ int main(int argc, char **argv) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
 
+  link->shutdown();
   a.stop();
   b.stop();
-  link->shutdown();
 
   a.join();
   b.join();

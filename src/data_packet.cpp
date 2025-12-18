@@ -24,8 +24,8 @@
   for (size_t i = 0; i < payload_len; i++) {
     _payload.push_back(static_cast<std::byte>(data[offset++]));
   }
-  _crc16 = static_cast<uint8_t>(data[offset] & 0xFF) |
-           static_cast<uint8_t>((data[offset + 1] << 8) & 0xFF00);
+  _crc16 = (static_cast<uint16_t>(data[offset] & 0xFF)) |
+           ((static_cast<uint16_t>(data[offset + 1]) << 8) & 0xFF00);
 
   return true;
 }

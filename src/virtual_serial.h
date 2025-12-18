@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <cstdint>
 #include <mutex>
@@ -29,5 +30,5 @@ private:
   std::condition_variable _cvAToB;
   std::condition_variable _cvBToA;
 
-  bool _shutdown{false};
+  std::atomic<bool> _shutdown{false};
 };

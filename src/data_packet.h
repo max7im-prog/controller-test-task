@@ -34,7 +34,8 @@ public:
     MSG_STATUS = 0x30,
     RESP_PWM = 0x81,
     RESP_PID = 0x82,
-    RESP_STATUS = 0x83
+    RESP_STATUS = 0x83,
+    RESP_ERROR = 0xFF
   };
 
 private:
