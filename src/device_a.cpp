@@ -1,5 +1,6 @@
 #include "device_a.h"
 #include "data_packet.h"
+#include <bit>
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -18,6 +19,26 @@ void formPWMDataPacket(DataPacket &dataPacket, uint16_t pwm) {
 void formStatusDataPacket(DataPacket &dataPacket) {
   dataPacket._command_id = DataPacket::MessageId::MSG_STATUS;
   dataPacket._payload.clear();
+  dataPacket._crc16 = DataPacket::generateCRC16(dataPacket);
+}
+
+void formPIDDataPacket(DataPacket &dataPacket, float kp, float ki, float kd) {
+  dataPacket._command_id = DataPacket::MessageId::MSG_PID;
+  dataPacket._payload.reserve(12);
+  dataPacket._payload.clear();
+
+  auto pushFloat = [&](float val) {
+    uint32_t bits = std::bit_cast<uint32_t>(val);
+    dataPacket._payload.push_back(static_cast<std::byte>(bits & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 8) & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 16) & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 24) & 0xFF));
+  };
+
+  pushFloat(kp);
+  pushFloat(ki);
+  pushFloat(kd);
+
   dataPacket._crc16 = DataPacket::generateCRC16(dataPacket);
 }
 
@@ -59,11 +80,44 @@ const std::map<std::uint8_t,
            } else {
              uint16_t pwm =
                  (static_cast<uint16_t>(dataPacket._payload[0]) & 0xFF) |
-                 ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) & 0xFF00);
+                 ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) &
+                  0xFF00);
 
              std::ostringstream oss;
              oss << "[A] Received status: pwm=" << static_cast<int>(pwm)
                  << std::endl;
+             std::cout << oss.str();
+           }
+           return true;
+         }},
+
+        {DataPacket::RESP_PID,
+         [](const DataPacket &dataPacket, DeviceA &device) -> bool {
+           if (dataPacket._payload.size() != 12) {
+             std::cerr << "[E] Malformed PID response" << std::endl;
+           } else {
+
+             size_t iter{0};
+
+             auto readFloat = [&]() -> float {
+               uint32_t bits{0};
+               bits |= std::to_integer<uint32_t>(dataPacket._payload[iter++]);
+               bits |=
+                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 8);
+               bits |=
+                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 16);
+               bits |=
+                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 24);
+               return std::bit_cast<float>(bits);
+             };
+
+             float kp = readFloat();
+             float ki = readFloat();
+             float kd = readFloat();
+
+             std::ostringstream oss;
+             oss << "[A] Received status: kp=" << kp << ", ki=" << ki
+                 << ", kd=" << kd << std::endl;
              std::cout << oss.str();
            }
            return true;
