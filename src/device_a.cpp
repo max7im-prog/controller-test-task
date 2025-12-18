@@ -1,5 +1,6 @@
 #include "device_a.h"
 #include "data_packet.h"
+#include "spdlog/spdlog.h"
 #include <bit>
 #include <chrono>
 #include <iostream>
@@ -50,51 +51,56 @@ const std::map<std::uint8_t,
 
         {DataPacket::RESP_STATUS,
          [](const DataPacket &dataPacket, DeviceA &device) -> bool {
+           std::ostringstream oss;
            if (dataPacket._payload.size() != 2) {
-             std::cerr << "[E] Malformed status response" << std::endl;
+             oss << "[A] Malformed status response";
+             spdlog::error(oss.str());
            } else {
              uint8_t battery = static_cast<uint8_t>(dataPacket._payload[0]);
              uint8_t temperature = static_cast<uint8_t>(dataPacket._payload[1]);
 
-             std::ostringstream oss;
              oss << "[A] Received status: battery=" << static_cast<int>(battery)
-                 << " temperature=" << static_cast<int>(temperature)
-                 << std::endl;
-             std::cout << oss.str();
+                 << " temperature=" << static_cast<int>(temperature);
            }
+           std::cout << oss.str() << std::endl;
+           spdlog::info(oss.str());
            return true;
          }},
 
         {DataPacket::RESP_ERROR,
          [](const DataPacket &dataPacket, DeviceA &device) -> bool {
            std::ostringstream oss;
-           oss << "[A] Status: ERROR" << std::endl;
-           std::cout << oss.str();
+           oss << "[A] Status: response=ERROR";
+           std::cout << oss.str() << std::endl;
+           spdlog::error(oss.str());
            return true;
          }},
 
         {DataPacket::RESP_PWM,
          [](const DataPacket &dataPacket, DeviceA &device) -> bool {
+           std::ostringstream oss;
            if (dataPacket._payload.size() != 2) {
-             std::cerr << "[E] Malformed PWM response" << std::endl;
+             oss << "[A] Malformed PWM response";
+             spdlog::error(oss.str());
            } else {
              uint16_t pwm =
                  (static_cast<uint16_t>(dataPacket._payload[0]) & 0xFF) |
                  ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) &
                   0xFF00);
 
-             std::ostringstream oss;
-             oss << "[A] Received status: pwm=" << static_cast<int>(pwm)
-                 << std::endl;
-             std::cout << oss.str();
+             oss << "[A] Received status: pwm=" << static_cast<int>(pwm);
+             spdlog::info(oss.str());
            }
+           std::cout << oss.str() << std::endl;
            return true;
          }},
 
         {DataPacket::RESP_PID,
          [](const DataPacket &dataPacket, DeviceA &device) -> bool {
+           std::ostringstream oss;
            if (dataPacket._payload.size() != 12) {
-             std::cerr << "[E] Malformed PID response" << std::endl;
+             oss << "[A] Malformed PID response" ;
+             spdlog::error(oss.str());
            } else {
 
              size_t iter{0};
@@ -115,11 +121,11 @@ const std::map<std::uint8_t,
              float ki = readFloat();
              float kd = readFloat();
 
-             std::ostringstream oss;
              oss << "[A] Received status: kp=" << kp << ", ki=" << ki
-                 << ", kd=" << kd << std::endl;
-             std::cout << oss.str();
+                 << ", kd=" << kd ;
+             spdlog::info(oss.str());
            }
+           std::cout << oss.str() << std::endl;
            return true;
          }}
 
@@ -142,7 +148,8 @@ void DeviceA::step() {
     } else if (rndRes == 1) {
       // MSG_STATUS
       formStatusDataPacket(sendDataPacket);
-    }   }
+    }
+  }
 
   {
     std::vector<uint8_t> serializedData;
@@ -150,15 +157,16 @@ void DeviceA::step() {
     if (serialized) {
       _link->sendAtoB(serializedData);
     } else {
-      std::cerr << "Failed to serialize data" << std::endl;
+      spdlog::error("[A] Failed to serialize data");
       return;
     }
   }
 
   {
-    bool hasData = _link->waitBToA(std::chrono::seconds(DeviceA::WAIT_TIMEOUT_SEC));
+    bool hasData =
+        _link->waitBToA(std::chrono::seconds(DeviceA::WAIT_TIMEOUT_SEC));
     if (!hasData) {
-      std::cerr << "Shutdown was issued on link or timed out" << std::endl;
+      spdlog::info("[A] Shutdown was issued on link or timed out");
       return;
     }
   }
@@ -168,7 +176,7 @@ void DeviceA::step() {
   {
     bool hasData = _link->readA(receivedData);
     if (!hasData) {
-      std::cerr << "No data on link" << std::endl;
+      spdlog::info("[A] No data on link");
       return;
     }
   }
@@ -178,7 +186,7 @@ void DeviceA::step() {
     bool parsed = receivedDataPacket.fromData(receivedData);
     if (!parsed) {
 
-      std::cerr << "Failed to parse data packet" << std::endl;
+      spdlog::error("[A] Failed to parse data packet");
       return;
     }
   }
@@ -187,7 +195,7 @@ void DeviceA::step() {
     bool crc16Matches =
         DataPacket::checkCRC16(receivedDataPacket, receivedDataPacket._crc16);
     if (!crc16Matches) {
-      std::cerr << "CRC16 does not match on receive" << std::endl;
+      spdlog::error("[A] CRC16 does not match on receive");
       return;
     }
   }
@@ -195,14 +203,16 @@ void DeviceA::step() {
   {
     if (responseDispatchTable.find(receivedDataPacket._command_id) ==
         responseDispatchTable.end()) {
-      std::cerr << "Unknown command: " << receivedDataPacket._command_id
-                << std::endl;
+      spdlog::error(
+          "[A] Unknown command: " +
+          std::to_string(static_cast<int>(receivedDataPacket._command_id)));
       return;
     }
     if (!responseDispatchTable.at(receivedDataPacket._command_id)(
             receivedDataPacket, *this)) {
-      std::cerr << "Failed to handle command: "
-                << receivedDataPacket._command_id << std::endl;
+      spdlog::error(
+          "[A] Failed to handle command: " +
+          std::to_string(static_cast<int>(receivedDataPacket._command_id)));
     }
   }
 }

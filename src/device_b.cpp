@@ -4,6 +4,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <spdlog/spdlog.h>
 
 namespace {
 void formPWMAckPacket(DataPacket &dataPacket, uint16_t pwm) {
@@ -60,7 +61,7 @@ const std::map<std::uint8_t,
          [](const DataPacket &dataPacket, DeviceB &device) -> bool {
            DataPacket respPacket;
            if (dataPacket._payload.size() != 2) {
-             std::cerr << "[E] Malformed PWM message" << std::endl;
+             spdlog::error("[B] Malformed PWM message");
              formErrorResponsePacket(respPacket);
            } else {
              device._deviceState._pwm =
@@ -72,7 +73,7 @@ const std::map<std::uint8_t,
 
            std::vector<uint8_t> serializedData;
            if (!respPacket.toData(serializedData)) {
-             std::cerr << "failed to serialize data" << std::endl;
+             spdlog::error("[B] failed to serialize data");
              return false;
            }
            device._link->sendBtoA(serializedData);
@@ -84,7 +85,7 @@ const std::map<std::uint8_t,
            DataPacket respPacket;
 
            if (dataPacket._payload.size() != 12) {
-             std::cerr << "[E] Malformed PID message" << std::endl;
+             spdlog::error("[B] Malformed PID message");
              formErrorResponsePacket(respPacket);
            } else {
              size_t iter{0};
@@ -110,7 +111,7 @@ const std::map<std::uint8_t,
 
            std::vector<uint8_t> serializedData;
            if (!respPacket.toData(serializedData)) {
-             std::cerr << "failed to serialize data" << std::endl;
+             spdlog::error("[B] failed to serialize data");
              return false;
            }
            device._link->sendBtoA(serializedData);
@@ -139,7 +140,7 @@ const std::map<std::uint8_t,
 
            std::vector<uint8_t> serializedData;
            if (!respPacket.toData(serializedData)) {
-             std::cerr << "failed to serialize data" << std::endl;
+             spdlog::error("[B] failed to serialize data");
              return false;
            }
 
@@ -156,7 +157,7 @@ void DeviceB::step() {
   {
     bool hasData = _link->waitAToB();
     if (!hasData) {
-      std::cerr << "Shutdown was issued on link" << std::endl;
+      spdlog::info("[B] Shutdown was issued on link");
       return;
     }
   }
@@ -165,7 +166,7 @@ void DeviceB::step() {
   {
     bool received = _link->readB(receivedData);
     if (!received) {
-      std::cerr << "No data in link" << std::endl;
+      spdlog::info("[B] No data in link");
       return;
     }
   }
@@ -175,7 +176,7 @@ void DeviceB::step() {
   if (packetIsValid) {
     bool parsed = dataPacket.fromData(receivedData);
     if (!parsed) {
-      std::cerr << "Failed to parse data" << std::endl;
+      spdlog::error("[B] Failed to parse data");
       packetIsValid = false;
       dataPacket._command_id = DataPacket::MessageId::STATE_ERROR;
     }
@@ -184,7 +185,7 @@ void DeviceB::step() {
   if (packetIsValid) {
     bool crc16Matches = DataPacket::checkCRC16(dataPacket, dataPacket._crc16);
     if (!crc16Matches) {
-      std::cerr << "crc16 does not match" << std::endl;
+      spdlog::error("[B] crc16 does not match");
       packetIsValid = false;
       dataPacket._command_id = DataPacket::MessageId::STATE_ERROR;
     }
@@ -193,17 +194,19 @@ void DeviceB::step() {
   {
     if (responseDispatchTable.find(dataPacket._command_id) ==
         responseDispatchTable.end()) {
-      std::cerr << "Unknown command: " << dataPacket._command_id << std::endl;
+      spdlog::error("[B] Unknown command: " +
+                    std::to_string(static_cast<int>(dataPacket._command_id)));
       packetIsValid = false;
       dataPacket._command_id = DataPacket::MessageId::STATE_ERROR;
       if (responseDispatchTable.find(DataPacket::MessageId::STATE_ERROR) ==
           responseDispatchTable.end()) {
-        std::cerr << "Unknown command: " << dataPacket._command_id << std::endl;
+        spdlog::error("[B] Unknown command: " +
+                      std::to_string(static_cast<int>(dataPacket._command_id)));
       }
     }
     if (!responseDispatchTable.at(dataPacket._command_id)(dataPacket, *this)) {
-      std::cerr << "Failed to handle command: " << dataPacket._command_id
-                << std::endl;
+        spdlog::error("[B] Failed to handle command: " +
+                      std::to_string(static_cast<int>(dataPacket._command_id)));
     }
   }
 }
