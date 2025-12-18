@@ -71,6 +71,11 @@ target_link_libraries(
   GTest::gtest
   run_lib
 )
+target_include_directories(
+  Tests
+  PRIVATE
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 set_target_properties(Tests PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
