@@ -27,9 +27,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(spdlog)
 
-include(CTest)
-include(GoogleTest)
 
+# Executable
 add_library(
   run_lib
   STATIC
@@ -39,18 +38,15 @@ add_library(
   src/device_b.cpp
   src/data_packet.cpp
 )
-
 target_link_libraries(
   run_lib
   PRIVATE
   spdlog
 )
-
 add_executable(
   controller-test-task 
   src/main.cpp
 )
-
 target_link_libraries(
   controller-test-task
   PUBLIC
@@ -58,3 +54,17 @@ target_link_libraries(
 )
 
 
+# Tests
+enable_testing()
+add_executable(
+  Tests 
+  test/tests.cpp
+)
+target_link_libraries(
+  Tests
+  PUBLIC
+  GTest::gtest_main
+  run_lib
+)
+include(GoogleTest)
+gtest_discover_tests(Tests)
