@@ -55,7 +55,6 @@ bool VirtualSerial::waitBToA() {
   return !_shutdown;
 }
 
-
 void VirtualSerial::shutdown() {
   {
     std::lock_guard<std::mutex> lockAToB{_mutexAToB};
