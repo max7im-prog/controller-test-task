@@ -27,21 +27,21 @@ DeviceA::DeviceA(std::shared_ptr<VirtualSerial> link)
       _rnd(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 void DeviceA::step() {
-  DataPacket dataPacket;
+  DataPacket sendDataPacket;
 
   if (_rnd() % 2 == 0) {
     // MSG_PWM
     uint16_t pwm = static_cast<uint16_t>(_rnd() % 1000);
-    formPWMDataPacket(dataPacket, pwm);
+    formPWMDataPacket(sendDataPacket, pwm);
 
   } else {
     // MSG_STATUS
-    formStatusDataPacket(dataPacket);
+    formStatusDataPacket(sendDataPacket);
   }
 
   {
     std::vector<uint8_t> serializedData;
-    bool serialized = dataPacket.toData(serializedData);
+    bool serialized = sendDataPacket.toData(serializedData);
     if (serialized) {
       _link->sendAtoB(serializedData);
     } else {
@@ -51,12 +51,53 @@ void DeviceA::step() {
   }
 
   {
-    bool responded = _link->waitBToA();
-    if (responded) {
-      // TODO: handle response
-    } else {
+    bool hasData = _link->waitBToA();
+    if (!hasData) {
       std::cerr << "Shutdown was issued on link" << std::endl;
       return;
+    }
+  }
+
+  std::vector<uint8_t> receivedData;
+
+  {
+    bool hasData = _link->readA(receivedData);
+    if (!hasData) {
+      std::cerr << "No data on link" << std::endl;
+      return;
+    }
+  }
+
+  DataPacket receivedDataPacket;
+  {
+    bool parsed = receivedDataPacket.fromData(receivedData);
+    if (!parsed) {
+
+      std::cerr << "Failed to parse data packet" << std::endl;
+      return;
+    }
+  }
+
+  {
+    bool crc16Matches =
+        DataPacket::checkCRC16(receivedDataPacket, receivedDataPacket._crc16);
+    if (!crc16Matches) {
+      std::cerr << "CRC16 does not match on receive" << std::endl;
+      return;
+    }
+  }
+
+  {
+    if (responseDispatchTable.find(receivedDataPacket._command_id) ==
+        responseDispatchTable.end()) {
+      std::cerr << "Unknown command: " << receivedDataPacket._command_id
+                << std::endl;
+      return;
+    }
+    if (!responseDispatchTable.at(receivedDataPacket._command_id)(
+            receivedDataPacket, _link)) {
+      std::cerr << "Failed to handle command: "
+                << receivedDataPacket._command_id << std::endl;
     }
   }
 }

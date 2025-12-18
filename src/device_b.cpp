@@ -1,4 +1,5 @@
 #include "device_b.h"
+
 #include "data_packet.h"
 #include <chrono>
 #include <iostream>
