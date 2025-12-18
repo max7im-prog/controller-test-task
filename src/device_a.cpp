@@ -127,7 +127,7 @@ void DeviceA::step() {
       return;
     }
     if (!responseDispatchTable.at(receivedDataPacket._command_id)(
-            receivedDataPacket, _link)) {
+            receivedDataPacket, *this)) {
       std::cerr << "Failed to handle command: "
                 << receivedDataPacket._command_id << std::endl;
     }

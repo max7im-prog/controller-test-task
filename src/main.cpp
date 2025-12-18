@@ -6,6 +6,7 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
+#include <iostream>
 #include <thread>
 
 namespace {
@@ -33,6 +34,8 @@ int main(int argc, char **argv) {
 
   a.join();
   b.join();
+
+  std::cout << "Shut down" << std::endl;
 
   return 0;
 }

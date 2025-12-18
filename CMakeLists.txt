@@ -8,6 +8,7 @@ add_executable(
   src/Idevice.cpp
   src/device_a.cpp
   src/device_b.cpp
+  src/data_packet.cpp
 )
 
 
