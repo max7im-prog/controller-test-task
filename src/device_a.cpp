@@ -99,7 +99,7 @@ const std::map<std::uint8_t,
          [](const DataPacket &dataPacket, DeviceA &device) -> bool {
            std::ostringstream oss;
            if (dataPacket._payload.size() != 12) {
-             oss << "[A] Malformed PID response" ;
+             oss << "[A] Malformed PID response";
              spdlog::error(oss.str());
            } else {
 
@@ -122,7 +122,7 @@ const std::map<std::uint8_t,
              float kd = readFloat();
 
              oss << "[A] Received status: kp=" << kp << ", ki=" << ki
-                 << ", kd=" << kd ;
+                 << ", kd=" << kd;
              spdlog::info(oss.str());
            }
            std::cout << oss.str() << std::endl;
