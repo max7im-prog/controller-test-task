@@ -19,7 +19,6 @@ public:
 
   void shutdown();
 
-
 private:
   std::queue<std::vector<uint8_t>> _queueAToB;
   std::queue<std::vector<uint8_t>> _queueBToA;
@@ -31,5 +30,4 @@ private:
   std::condition_variable _cvBToA;
 
   bool _shutdown{false};
-
 };

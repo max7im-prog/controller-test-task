@@ -43,7 +43,7 @@ bool VirtualSerial::readB(std::vector<uint8_t> &out) {
 
 bool VirtualSerial::waitAToB() {
   std::unique_lock<std::mutex> lock(_mutexAToB);
-  _cvBToA.wait(lock, [&]() { return _shutdown || !_queueAToB.empty(); });
+  _cvAToB.wait(lock, [&]() { return _shutdown || !_queueAToB.empty(); });
 
   return !_shutdown;
 }

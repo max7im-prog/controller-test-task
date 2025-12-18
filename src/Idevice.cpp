@@ -1,14 +1,25 @@
 #include "Idevice.h"
-void IDevice::start() {
-  _running = true;
-  _thread = std::thread(&IDevice::run, this);
+
+IDevice::~IDevice() = default;
+
+void IDevice::run() {
+  std::unique_lock<std::mutex> lock{_mutex};
+  while (!_stopCondition) {
+    _cv.wait_for(lock, _updateInterval,
+                 [&]() -> bool { return static_cast<bool>(_stopCondition); });
+    if (_stopCondition) {
+      break;
+    }
+    lock.unlock();
+    step();
+    lock.lock();
+  }
 }
 
+void IDevice::start() { _thread = std::thread(&IDevice::run, this); }
+
 void IDevice::stop() {
-  {
-    std::lock_guard<std::mutex> lock{_mutex};
-    _running = false;
-  }
+  _stopCondition = true;
   _cv.notify_all();
 }
 

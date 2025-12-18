@@ -3,6 +3,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <thread>
+
 class IDevice {
 public:
   virtual ~IDevice() = 0;
@@ -11,11 +12,12 @@ public:
   void join();
 
 protected:
-  virtual void run() = 0;
+  virtual void step() = 0;
+  std::chrono::milliseconds _updateInterval{0};
+private:
+  void run();
+  std::thread _thread;
   std::mutex _mutex;
   std::condition_variable _cv;
-  bool _running{false};
-
-private:
-  std::thread _thread;
+  std::atomic<bool> _stopCondition{false};
 };
