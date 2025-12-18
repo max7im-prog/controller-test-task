@@ -58,16 +58,17 @@ const std::map<std::uint8_t,
 
         {DataPacket::MessageId::MSG_PWM,
          [](const DataPacket &dataPacket, DeviceB &device) -> bool {
+           DataPacket respPacket;
            if (dataPacket._payload.size() != 2) {
              std::cerr << "[E] Malformed PWM message" << std::endl;
+             formErrorResponsePacket(respPacket);
            } else {
              device._deviceState._pwm =
                  (static_cast<uint16_t>(dataPacket._payload[0]) & 0xFF) |
                  ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) &
                   0xFF00);
+             formPWMAckPacket(respPacket, device._deviceState._pwm);
            }
-           DataPacket respPacket;
-           formPWMAckPacket(respPacket, device._deviceState._pwm);
 
            std::vector<uint8_t> serializedData;
            if (!respPacket.toData(serializedData)) {
@@ -80,10 +81,12 @@ const std::map<std::uint8_t,
 
         {DataPacket::MSG_PID,
          [](const DataPacket &dataPacket, DeviceB &device) -> bool {
+           DataPacket respPacket;
+
            if (dataPacket._payload.size() != 12) {
              std::cerr << "[E] Malformed PID message" << std::endl;
+             formErrorResponsePacket(respPacket);
            } else {
-
              size_t iter{0};
 
              auto readFloat = [&]() -> float {
@@ -101,10 +104,9 @@ const std::map<std::uint8_t,
              device._deviceState.kp = readFloat();
              device._deviceState.ki = readFloat();
              device._deviceState.kd = readFloat();
+             formPIDAckPacket(respPacket, device._deviceState.kp,
+                              device._deviceState.ki, device._deviceState.kd);
            }
-           DataPacket respPacket;
-           formPIDAckPacket(respPacket, device._deviceState.kp,
-                            device._deviceState.ki, device._deviceState.kd);
 
            std::vector<uint8_t> serializedData;
            if (!respPacket.toData(serializedData)) {
