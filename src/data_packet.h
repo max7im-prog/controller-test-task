@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <span>
 #include <vector>
 
 class DataPacket {
@@ -32,10 +31,13 @@ public:
     MSG_PWM = 0x10,
     MSG_PID = 0x20,
     MSG_STATUS = 0x30,
+
     RESP_PWM = 0x81,
     RESP_PID = 0x82,
     RESP_STATUS = 0x83,
-    RESP_ERROR = 0xFF
+    RESP_ERROR = 0xFF,
+
+    STATE_ERROR = 0xEE
   };
 
 private:

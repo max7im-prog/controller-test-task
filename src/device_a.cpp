@@ -3,6 +3,7 @@
 #include <chrono>
 #include <iostream>
 #include <random>
+#include <sstream>
 
 namespace {
 void formPWMDataPacket(DataPacket &dataPacket, uint16_t pwm) {
@@ -33,9 +34,21 @@ const std::map<std::uint8_t,
            } else {
              uint8_t battery = static_cast<uint8_t>(dataPacket._payload[0]);
              uint8_t temperature = static_cast<uint8_t>(dataPacket._payload[1]);
-             std::cout << "[A] Received status: battery=" << battery
-                       << " temperature=" << temperature << std::endl;
+
+             std::ostringstream oss;
+             oss << "[A] Received status: battery=" << static_cast<int>(battery)
+                 << " temperature=" << static_cast<int>(temperature)
+                 << std::endl;
+             std::cout << oss.str();
            }
+           return true;
+         }},
+
+        {DataPacket::RESP_ERROR,
+         [](const DataPacket &dataPacket, DeviceA &device) -> bool {
+           std::ostringstream oss;
+           oss << "[A] Status: ERROR" << std::endl;
+           std::cout << oss.str();
            return true;
          }},
 
@@ -45,9 +58,13 @@ const std::map<std::uint8_t,
              std::cerr << "[E] Malformed PWM response" << std::endl;
            } else {
              uint16_t pwm =
-                 (static_cast<uint8_t>(dataPacket._payload[0]) & 0xFF) |
-                 (static_cast<uint8_t>(dataPacket._payload[1] << 8) & 0xFF00);
-             std::cout << "[A] Received status: pwm=" << pwm << std::endl;
+                 (static_cast<uint16_t>(dataPacket._payload[0]) & 0xFF) |
+                 ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) & 0xFF00);
+
+             std::ostringstream oss;
+             oss << "[A] Received status: pwm=" << static_cast<int>(pwm)
+                 << std::endl;
+             std::cout << oss.str();
            }
            return true;
          }}
