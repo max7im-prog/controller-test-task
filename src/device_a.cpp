@@ -156,9 +156,9 @@ void DeviceA::step() {
   }
 
   {
-    bool hasData = _link->waitBToA();
+    bool hasData = _link->waitBToA(std::chrono::seconds(DeviceA::WAIT_TIMEOUT_SEC));
     if (!hasData) {
-      std::cerr << "Shutdown was issued on link" << std::endl;
+      std::cerr << "Shutdown was issued on link or timed out" << std::endl;
       return;
     }
   }

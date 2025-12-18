@@ -18,6 +18,23 @@ public:
   [[nodiscard]] bool waitAToB();
   [[nodiscard]] bool waitBToA();
 
+  template <typename Rep, typename Period>
+  bool waitAToB(std::chrono::duration<Rep, Period> timeout) {
+    std::unique_lock<std::mutex> lock(_mutexAToB);
+    bool ready = _cvAToB.wait_for(
+        lock, timeout, [&]() { return _shutdown || !_queueAToB.empty(); });
+
+    return ready && !_shutdown;
+  }
+
+  template <typename Rep, typename Period>
+  bool waitBToA(std::chrono::duration<Rep, Period> timeout) {
+    std::unique_lock<std::mutex> lock(_mutexBToA);
+    bool ready = _cvBToA.wait_for(
+        lock, timeout, [&]() { return _shutdown || !_queueBToA.empty(); });
+
+    return ready && !_shutdown;
+  }
   void shutdown();
 
 private:

@@ -18,4 +18,5 @@ protected:
       std::uint8_t,
       std::function<bool(const DataPacket &, DeviceA&)>>
       responseDispatchTable; 
+  static constexpr uint32_t WAIT_TIMEOUT_SEC = 5;
 };
