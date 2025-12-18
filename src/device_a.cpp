@@ -102,12 +102,12 @@ const std::map<std::uint8_t,
              auto readFloat = [&]() -> float {
                uint32_t bits{0};
                bits |= std::to_integer<uint32_t>(dataPacket._payload[iter++]);
-               bits |=
-                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 8);
-               bits |=
-                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 16);
-               bits |=
-                   (std::to_integer<uint32_t>(dataPacket._payload[iter++]) << 24);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 8);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 16);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 24);
                return std::bit_cast<float>(bits);
              };
 
@@ -132,15 +132,17 @@ DeviceA::DeviceA(std::shared_ptr<VirtualSerial> link)
 void DeviceA::step() {
   DataPacket sendDataPacket;
 
-  if (_rnd() % 2 == 0) {
-    // MSG_PWM
-    uint16_t pwm = static_cast<uint16_t>(_rnd() % 1000);
-    formPWMDataPacket(sendDataPacket, pwm);
+  {
+    auto rndRes = _rnd() % 2;
+    if (rndRes == 0) {
+      // MSG_PWM
+      uint16_t pwm = static_cast<uint16_t>(_rnd() % 1000);
+      formPWMDataPacket(sendDataPacket, pwm);
 
-  } else {
-    // MSG_STATUS
-    formStatusDataPacket(sendDataPacket);
-  }
+    } else if (rndRes == 1) {
+      // MSG_STATUS
+      formStatusDataPacket(sendDataPacket);
+    }   }
 
   {
     std::vector<uint8_t> serializedData;

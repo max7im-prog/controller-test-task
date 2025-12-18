@@ -30,6 +30,26 @@ void formErrorResponsePacket(DataPacket &dataPacket) {
   dataPacket._crc16 = DataPacket::generateCRC16(dataPacket);
 }
 
+void formPIDAckPacket(DataPacket &dataPacket, float kp, float ki, float kd) {
+  dataPacket._command_id = DataPacket::MessageId::RESP_PID;
+  dataPacket._payload.reserve(12);
+  dataPacket._payload.clear();
+
+  auto pushFloat = [&](float val) {
+    uint32_t bits = std::bit_cast<uint32_t>(val);
+    dataPacket._payload.push_back(static_cast<std::byte>(bits & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 8) & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 16) & 0xFF));
+    dataPacket._payload.push_back(static_cast<std::byte>((bits >> 24) & 0xFF));
+  };
+
+  pushFloat(kp);
+  pushFloat(ki);
+  pushFloat(kd);
+
+  dataPacket._crc16 = DataPacket::generateCRC16(dataPacket);
+}
+
 } // namespace
 
 const std::map<std::uint8_t,
@@ -43,17 +63,55 @@ const std::map<std::uint8_t,
            } else {
              device._deviceState._pwm =
                  (static_cast<uint16_t>(dataPacket._payload[0]) & 0xFF) |
-                 ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) & 0xFF00);
-             DataPacket respPacket;
-             formPWMAckPacket(respPacket, device._deviceState._pwm);
-
-             std::vector<uint8_t> serializedData;
-             if (!respPacket.toData(serializedData)) {
-               std::cerr << "failed to serialize data" << std::endl;
-               return false;
-             }
-             device._link->sendBtoA(serializedData);
+                 ((static_cast<uint16_t>(dataPacket._payload[1]) << 8) &
+                  0xFF00);
            }
+           DataPacket respPacket;
+           formPWMAckPacket(respPacket, device._deviceState._pwm);
+
+           std::vector<uint8_t> serializedData;
+           if (!respPacket.toData(serializedData)) {
+             std::cerr << "failed to serialize data" << std::endl;
+             return false;
+           }
+           device._link->sendBtoA(serializedData);
+           return true;
+         }},
+
+        {DataPacket::MSG_PID,
+         [](const DataPacket &dataPacket, DeviceB &device) -> bool {
+           if (dataPacket._payload.size() != 12) {
+             std::cerr << "[E] Malformed PID message" << std::endl;
+           } else {
+
+             size_t iter{0};
+
+             auto readFloat = [&]() -> float {
+               uint32_t bits{0};
+               bits |= std::to_integer<uint32_t>(dataPacket._payload[iter++]);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 8);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 16);
+               bits |= (std::to_integer<uint32_t>(dataPacket._payload[iter++])
+                        << 24);
+               return std::bit_cast<float>(bits);
+             };
+
+             device._deviceState.kp = readFloat();
+             device._deviceState.ki = readFloat();
+             device._deviceState.kd = readFloat();
+           }
+           DataPacket respPacket;
+           formPIDAckPacket(respPacket, device._deviceState.kp,
+                            device._deviceState.ki, device._deviceState.kd);
+
+           std::vector<uint8_t> serializedData;
+           if (!respPacket.toData(serializedData)) {
+             std::cerr << "failed to serialize data" << std::endl;
+             return false;
+           }
+           device._link->sendBtoA(serializedData);
            return true;
          }},
 
